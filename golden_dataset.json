@@ -1,0 +1,248 @@
+{
+    "_meta": {
+      "description": "Golden dataset for the Multi-Source Research Agent eval dashboard. Questions are grounded in the two PDFs actually loaded into the agent's vector store (100_ml_interview_questions.pdf, ai_ml_interview_qa.pdf) so RAG questions are genuinely answerable from the corpus, not guessed generic ML trivia.",
+      "categories": {
+        "easy_rag": "Clearly covered by the PDF corpus. Agent should use rag_tool and answer correctly.",
+        "web_search": "Live/current information not in the PDFs. Agent should use web_search_tool. Expected answers are non-deterministic (change over time) so scoring checks tool choice, not exact answer text.",
+        "calculator": "Pure arithmetic. Agent should use calculator_tool and produce an exact numeric answer.",
+        "ambiguous": "Borderline cases — may retrieve low-confidence from RAG, may need fallback to web_search, or a reasonable agent could pick either tool. Scored on tool choice being one of the acceptable options plus a sane final answer, not a single 'correct' tool.",
+        "unanswerable": "No tool can genuinely answer these. Agent should say it doesn't know rather than guessing or misusing a tool."
+      },
+      "scoring_methods": {
+        "exact_match": "Final answer must contain the exact expected value.",
+        "semantic_match": "Final answer should convey the same key facts as expected_answer_summary (use LLM-as-judge or keyword overlap).",
+        "tool_only": "Only tool selection is scored automatically; answer content is non-deterministic or judged manually.",
+        "refusal_check": "Final answer should contain refusal/uncertainty language (e.g. 'don't know', 'not able to find', 'no information') rather than a fabricated answer."
+      }
+    },
+    "questions": [
+      {
+        "id": "rag_01",
+        "category": "easy_rag",
+        "question": "What is the difference between bagging and boosting?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Bagging trains models in parallel on bootstrapped samples and averages results to reduce variance (e.g. Random Forest). Boosting trains models sequentially, each correcting the previous one's errors, mainly reducing bias (e.g. XGBoost, AdaBoost).",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_02",
+        "category": "easy_rag",
+        "question": "What is overfitting and how do you prevent it?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Overfitting is when a model learns training data (including its noise) too well and fails to generalize. Prevention includes more data, cross-validation, L1/L2 regularization, and dropout.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_03",
+        "category": "easy_rag",
+        "question": "Explain the bias-variance tradeoff.",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Bias is error from an overly simple model (underfitting); variance is error from excessive sensitivity to training data (overfitting). Diagnosed by comparing training vs validation error.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_04",
+        "category": "easy_rag",
+        "question": "How does a Support Vector Machine (SVM) work?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "SVM finds the hyperplane that maximizes the margin between classes; the closest points to the boundary are the support vectors. The kernel trick projects data into higher dimensions for non-linear separation.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_05",
+        "category": "easy_rag",
+        "question": "What is PCA and how does it work?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "PCA finds directions of maximum variance (principal components) and projects data onto a lower-dimensional space, using the covariance matrix's eigenvectors/eigenvalues.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_06",
+        "category": "easy_rag",
+        "question": "What is dropout and why does it help prevent overfitting in neural networks?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Dropout randomly deactivates a fraction of neurons during training so the network can't rely too heavily on any single neuron, which acts like training an ensemble of smaller networks and improves generalization.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_07",
+        "category": "easy_rag",
+        "question": "What is RAG (Retrieval-Augmented Generation) and when would you use it?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "RAG retrieves relevant documents via vector search and injects them into the LLM prompt before generation, grounding responses in up-to-date or domain-specific information without retraining the model.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_08",
+        "category": "easy_rag",
+        "question": "What causes the vanishing/exploding gradient problem and how do you mitigate it?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Gradients shrink or grow uncontrollably as they propagate backward through many layers. Mitigations include ReLU-family activations, proper weight initialization, batch normalization, gradient clipping, and skip connections.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_09",
+        "category": "easy_rag",
+        "question": "How does a Transformer architecture differ from an LSTM?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "LSTMs process sequences step-by-step, which is inherently sequential and hard to parallelize. Transformers use self-attention to process the whole sequence at once, enabling full parallelization and better long-range dependency modeling.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "rag_10",
+        "category": "easy_rag",
+        "question": "What is cross-validation and why is it important?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Cross-validation splits data into multiple train/validation folds (e.g. k-fold) to get a more reliable estimate of generalization performance than a single train/test split, helping detect overfitting.",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "web_01",
+        "category": "web_search",
+        "question": "What is the current repo rate set by the RBI?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic — value changes over time. Score tool choice, not exact number.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true
+      },
+      {
+        "id": "web_02",
+        "category": "web_search",
+        "question": "Who is the current CEO of OpenAI?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic — role holder can change over time. Score tool choice, not exact answer.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true
+      },
+      {
+        "id": "web_03",
+        "category": "web_search",
+        "question": "What is the latest stable version of Python?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic — new versions release periodically. Score tool choice, not exact version number.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true
+      },
+      {
+        "id": "web_04",
+        "category": "web_search",
+        "question": "Who won the most recent T20 Cricket World Cup?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic. NOTE: this is the exact question documented in the project README as a known failure mode — the agent previously returned an older result instead of the most recent one because it has no date-parsing/recency-ranking logic. Keep this case in the dataset specifically to track whether that limitation has been fixed.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true,
+        "notes": "Regression test for the documented recency-ranking limitation."
+      },
+      {
+        "id": "web_05",
+        "category": "web_search",
+        "question": "What is today's USD to INR exchange rate?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic — changes daily. Score tool choice, not exact number.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true
+      },
+      {
+        "id": "calc_01",
+        "category": "calculator",
+        "question": "What is 18% of 45000?",
+        "expected_tool": "calculator_tool",
+        "expected_answer": "8100",
+        "scoring_method": "exact_match"
+      },
+      {
+        "id": "calc_02",
+        "category": "calculator",
+        "question": "What is (250 + 730) divided by 4?",
+        "expected_tool": "calculator_tool",
+        "expected_answer": "245",
+        "scoring_method": "exact_match"
+      },
+      {
+        "id": "calc_03",
+        "category": "calculator",
+        "question": "If a model gets 92 correct predictions out of 115 total, what is its accuracy as a percentage?",
+        "expected_tool": "calculator_tool",
+        "expected_answer": "80",
+        "scoring_method": "exact_match",
+        "notes": "Tests whether the agent correctly converts a word problem into a calculator expression (92/115*100), not just raw arithmetic."
+      },
+      {
+        "id": "calc_04",
+        "category": "calculator",
+        "question": "What is 15 times 24, minus 60?",
+        "expected_tool": "calculator_tool",
+        "expected_answer": "300",
+        "scoring_method": "exact_match"
+      },
+      {
+        "id": "amb_01",
+        "category": "ambiguous",
+        "question": "What is the difference between focal loss and standard cross-entropy loss?",
+        "acceptable_tools": ["rag_tool", "web_search_tool"],
+        "expected_answer_summary": "Not covered in the loaded PDFs (they discuss loss functions only generically). A good agent should get LOW_CONFIDENCE from rag_tool and either fall back to web_search_tool or honestly say it doesn't have this in the documents — not fabricate an answer from general knowledge.",
+        "scoring_method": "tool_only",
+        "notes": "Tests the confidence-gated fallback behavior specifically."
+      },
+      {
+        "id": "amb_02",
+        "category": "ambiguous",
+        "question": "What's the current state-of-the-art architecture for time-series forecasting?",
+        "acceptable_tools": ["rag_tool", "web_search_tool"],
+        "expected_answer_summary": "Mixes an ML-sounding topic with 'current/state-of-the-art', which implies live information rather than the static PDF content. A good agent should lean toward web_search_tool, or try rag_tool first and fall back.",
+        "scoring_method": "tool_only",
+        "notes": "Tests whether the agent over-indexes on 'ML topic = always rag_tool'."
+      },
+      {
+        "id": "amb_03",
+        "category": "ambiguous",
+        "question": "Explain how LoRA reduces the cost of fine-tuning large language models.",
+        "acceptable_tools": ["rag_tool", "web_search_tool"],
+        "expected_answer_summary": "LoRA is only briefly mentioned in passing in the PDFs (as one example of a parameter-efficient fine-tuning method) without a real explanation of how it works. Retrieval may or may not surface enough to answer well — a good agent either gives a thin-but-correct answer, falls back to web search for more depth, or says the documents only mention it briefly.",
+        "scoring_method": "tool_only",
+        "notes": "Tests partial-relevance retrieval, not a clean hit-or-miss case."
+      },
+      {
+        "id": "amb_04",
+        "category": "ambiguous",
+        "question": "What is the current benchmark accuracy of the latest GPT models on the MMLU test?",
+        "acceptable_tools": ["rag_tool", "web_search_tool"],
+        "expected_answer_summary": "Sounds like an ML/LLM topic (pulling toward rag_tool) but actually needs live benchmark data (pulling toward web_search_tool). Not answerable from the static PDF corpus.",
+        "scoring_method": "tool_only",
+        "notes": "Tests whether 'sounds like an ML question' incorrectly overrides the need for current data."
+      },
+      {
+        "id": "amb_05",
+        "category": "ambiguous",
+        "question": "How do vision transformers differ from CNNs for image classification specifically?",
+        "acceptable_tools": ["rag_tool", "web_search_tool"],
+        "expected_answer_summary": "The PDFs compare CNNs vs Transformers generally (for sequences/NLP) but don't specifically cover Vision Transformers (ViT) applied to images. A good agent should either give the general comparison while flagging the gap, or fall back to web search for the ViT-specific detail.",
+        "scoring_method": "tool_only",
+        "notes": "Tests whether the agent notices a narrower/more specific question than what the retrieved chunks actually support."
+      },
+      {
+        "id": "unk_01",
+        "category": "unanswerable",
+        "question": "What did I have for breakfast yesterday?",
+        "expected_tool": "none",
+        "expected_answer_summary": "No tool has access to the user's personal history. Agent should say it doesn't know / can't answer rather than guessing.",
+        "scoring_method": "refusal_check"
+      },
+      {
+        "id": "unk_02",
+        "category": "unanswerable",
+        "question": "Should I switch my career from data science to product management?",
+        "expected_tool": "none",
+        "expected_answer_summary": "A subjective personal decision, not a factual lookup or calculation. Agent should decline to give a definitive answer rather than fabricating authoritative-sounding career advice.",
+        "scoring_method": "refusal_check"
+      },
+      {
+        "id": "unk_03",
+        "category": "unanswerable",
+        "question": "According to ancient Sumerian records, what was the average airspeed velocity of an unladen swallow?",
+        "expected_tool": "none",
+        "expected_answer_summary": "Nonsensical/fabricated premise question with no real source. Agent should express uncertainty rather than inventing a confident-sounding fake fact.",
+        "scoring_method": "refusal_check"
+      }
+    ]
+  }

@@ -1,0 +1,40 @@
+{
+    "_meta": {
+      "description": "Quota-safe TEST subset of golden_dataset.json — same schema, same question ids/text (exact subset, not new data). Use via GOLDEN_DATASET_FILE=golden_dataset_test.json to verify the full pipeline (agent -> eval runner -> SQLite -> API) without burning the full 27-question run against a limited daily LLM quota."
+    },
+    "questions": [
+      {
+        "id": "rag_01",
+        "category": "easy_rag",
+        "question": "What is the difference between bagging and boosting?",
+        "expected_tool": "rag_tool",
+        "expected_answer_summary": "Bagging trains models in parallel on bootstrapped samples and averages results to reduce variance (e.g. Random Forest). Boosting trains models sequentially, each correcting the previous one's errors, mainly reducing bias (e.g. XGBoost, AdaBoost).",
+        "scoring_method": "semantic_match"
+      },
+      {
+        "id": "web_01",
+        "category": "web_search",
+        "question": "What is the current repo rate set by the RBI?",
+        "expected_tool": "web_search_tool",
+        "expected_answer_summary": "Non-deterministic — value changes over time. Score tool choice, not exact number.",
+        "scoring_method": "tool_only",
+        "non_deterministic": true
+      },
+      {
+        "id": "calc_01",
+        "category": "calculator",
+        "question": "What is 18% of 45000?",
+        "expected_tool": "calculator_tool",
+        "expected_answer": "8100",
+        "scoring_method": "exact_match"
+      },
+      {
+        "id": "unk_01",
+        "category": "unanswerable",
+        "question": "What did I have for breakfast yesterday?",
+        "expected_tool": "none",
+        "expected_answer_summary": "No tool has access to the user's personal history. Agent should say it doesn't know / can't answer rather than guessing.",
+        "scoring_method": "refusal_check"
+      }
+    ]
+  }
