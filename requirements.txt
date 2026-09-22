@@ -26,3 +26,4 @@ python-dotenv==1.2.2
 
 fastapi
 uvicorn
+psycopg2-binary

@@ -101,10 +101,10 @@ def run_full_eval():
 
     started_at = datetime.now(timezone.utc).isoformat()
     cur.execute(
-        "INSERT INTO eval_runs (started_at, total_questions) VALUES (?, ?)",
+        "INSERT INTO eval_runs (started_at, total_questions) VALUES (%s, %s) RETURNING id",
         (started_at, len(golden_questions)),
     )
-    run_id = cur.lastrowid
+    run_id = cur.fetchone()["id"]
     conn.commit()
 
     results = []
@@ -155,7 +155,7 @@ def run_full_eval():
                 tools_used, tool_correct, rag_confidence_distance, rag_gated,
                 final_answer, answer_correct, hallucination_flag, passed,
                 latency_seconds, reasoning_trace, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 run_id, result["question_id"], result["category"], result["question"],
@@ -184,10 +184,10 @@ def run_full_eval():
     cur.execute(
         """
         UPDATE eval_runs
-        SET finished_at = ?, completed_questions = ?, stopped_early_reason = ?,
-            accuracy = ?, tool_selection_correct_rate = ?,
-            hallucination_rate = ?, avg_latency_seconds = ?
-        WHERE id = ?
+        SET finished_at = %s, completed_questions = %s, stopped_early_reason = %s,
+            accuracy = %s, tool_selection_correct_rate = %s,
+            hallucination_rate = %s, avg_latency_seconds = %s
+        WHERE id = %s
         """,
         (
             datetime.now(timezone.utc).isoformat(), total, stopped_early_reason,
@@ -195,6 +195,7 @@ def run_full_eval():
         ),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
     return run_id

@@ -1,0 +1,58 @@
+# render.yaml — Render Blueprint
+#
+# Deploys both services together: connect this repo at render.com/new
+# (or dashboard > New > Blueprint) and Render reads this file automatically.
+#
+# Not using Render's own Postgres — DATABASE_URL points at the Neon project
+# set up earlier, so there's no `databases:` block here.
+
+services:
+  # ---- Backend: FastAPI ----
+  - type: web
+    name: agent-eval-dashboard-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Render sets $PORT itself — the app must bind to it, not a hardcoded port.
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # sync: false means Render prompts for these in the dashboard instead
+      # of storing the value in this file — correct for secrets, since this
+      # file is committed to git.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      # The frontend's URL, so the backend's CORS check allows it. Render
+      # service URLs follow https://<service-name>.onrender.com — fill in
+      # the frontend service's actual name below once you know it (it may
+      # get a suffix like -abcd if the name is taken). Update this value
+      # (or set it in the dashboard) after the first deploy if it doesn't
+      # match — a wrong value here just means CORS-blocked requests until
+      # corrected, not a failed deploy.
+      - key: FRONTEND_ORIGIN
+        value: https://agent-eval-dashboard.onrender.com
+
+  # ---- Frontend: static React build ----
+  - type: web
+    name: agent-eval-dashboard
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      # SPA fallback — this app doesn't use client-side routing today, but
+      # this is harmless and avoids a 404 if that ever changes.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Same chicken-and-egg note as FRONTEND_ORIGIN above, in reverse —
+      # this needs the BACKEND service's actual URL. Update after the
+      # backend's first deploy if the name above got a suffix.
+      - key: VITE_API_BASE_URL
+        value: https://agent-eval-dashboard-api.onrender.com

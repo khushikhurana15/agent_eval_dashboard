@@ -1,21 +1,32 @@
 # backend/database.py
 #
-# SQLite has no separate server — it's just a file (results.db) that lives
-# in the project root. get_connection() opens that file; init_db() creates
-# the two tables the first time the app starts (CREATE TABLE IF NOT EXISTS
-# is safe to call every startup — it's a no-op if the tables already exist).
+# Migrated from SQLite to Postgres for deployment: a deployed backend's
+# filesystem is usually ephemeral (resets on restart/redeploy), so results
+# stored in a local SQLite file would vanish. Postgres via a hosted provider
+# (Neon, Supabase, Render Postgres) persists independently of the app's
+# filesystem. DATABASE_URL is the standard env var name all of these
+# providers use, so no provider-specific code is needed here.
+#
+# For LOCAL development without a hosted Postgres, run one via Docker:
+#   docker run -e POSTGRES_PASSWORD=localdev -p 5432:5432 postgres
+# and set DATABASE_URL=postgresql://postgres:localdev@localhost:5432/postgres
 
-import sqlite3
-from pathlib import Path
+import os
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
 
-DB_PATH = Path(__file__).parent.parent / "results.db"
+# This module is imported first (by main.py, before agent/generator modules
+# that also call load_dotenv()), and DATABASE_URL is read at import time —
+# so .env needs to be loaded right here, not assumed to already be loaded
+# by something imported earlier.
+load_dotenv()
+
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    # row_factory lets us read columns by name (row["accuracy"]) instead of
-    # by position (row[3]) — much less error-prone as the schema grows.
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
 
 
@@ -27,7 +38,7 @@ def init_db():
     # top-of-dashboard summary cards.
     cur.execute("""
         CREATE TABLE IF NOT EXISTS eval_runs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             started_at TEXT NOT NULL,
             finished_at TEXT,
             total_questions INTEGER,
@@ -41,11 +52,14 @@ def init_db():
     """)
 
     # One row per question, per run. Powers the expandable results table.
-    # tools_used and reasoning_trace are stored as JSON text (SQLite has no
-    # native list/object type) and parsed back into Python on the way out.
+    # tools_used and reasoning_trace are stored as JSON text (kept as TEXT,
+    # same as the SQLite version, rather than switching to Postgres's native
+    # JSONB — no query needs to filter inside these fields, so there's no
+    # benefit to the native type here, and TEXT keeps main.py's
+    # json.loads()/json.dumps() calls unchanged).
     cur.execute("""
         CREATE TABLE IF NOT EXISTS eval_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             run_id INTEGER NOT NULL REFERENCES eval_runs(id),
             question_id TEXT NOT NULL,
             category TEXT NOT NULL,
@@ -66,4 +80,5 @@ def init_db():
     """)
 
     conn.commit()
+    cur.close()
     conn.close()

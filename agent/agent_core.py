@@ -1,6 +1,7 @@
 # agent/agent_core.py
 
 import os
+from datetime import date
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
@@ -10,7 +11,15 @@ from agent.tools.calculator_tool import calculator_tool
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are a research assistant with access to three tools:
+# The LLM has no built-in clock — without being told today's date, it can't
+# judge which of several search results (e.g. T20 World Cup "2022", "2024",
+# "2026" articles all appearing in one search) is actually the most recent.
+# This is built as a function (not a fixed string) so it's computed fresh
+# each time the agent runs, rather than baked in at import time and going
+# stale.
+def build_system_prompt() -> str:
+    today = date.today().isoformat()
+    return f"""You are a research assistant with access to three tools. Today's date is {today}.
 
 1. rag_tool - searches uploaded PDF documents (AI/ML interview prep content)
 2. web_search_tool - searches the internet for ANY current, live, or 
@@ -31,6 +40,22 @@ Decision rules:
 - If the question is about current events, live data, prices, or general 
   knowledge clearly outside the PDFs, use web_search_tool directly — 
   do not refuse just because you personally don't know the answer.
+
+Handling "most recent / current / latest" questions:
+- Search results are NOT sorted by recency, and often mix coverage of
+  different editions/years of the same recurring thing (e.g. search results
+  for "T20 World Cup winner" can return articles about the 2022, 2024, AND
+  2026 tournaments all at once). Picking the first or most prominent result
+  without checking its date is a common mistake — do not do this.
+- For every candidate result, identify the specific date or year it refers
+  to. Compare these explicitly against today's date ({today}) and against
+  each other, and select the one that is actually the most recent.
+- If the results are ambiguous or conflict on which is most recent, run one
+  more targeted search including a specific recent year (e.g. adding
+  "{today[:4]}") to disambiguate, rather than guessing from the first result.
+- State the date/year of the event alongside the answer, so the recency of
+  the information is explicit rather than implied.
+
 - Always explain briefly which tool you used and why, before giving the final answer.
 """
 
@@ -46,7 +71,7 @@ def get_agent():
     agent = create_agent(
         model=llm,
         tools=tools,
-        system_prompt=SYSTEM_PROMPT
+        system_prompt=build_system_prompt()
     )
 
     return agent
@@ -114,7 +139,7 @@ def parse_agent_trace(messages):
 # provider is configured above. Change TEST_QUESTION below to try a
 # different case.
 if __name__ == "__main__":
-    TEST_QUESTION = "What is the difference between bagging and boosting?"
+    TEST_QUESTION = "Who won the most recent T20 Cricket World Cup?"
 
     print(f"QUESTION: {TEST_QUESTION}\n")
 
