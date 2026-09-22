@@ -11,7 +11,6 @@ services:
   - type: web
     name: agent-eval-dashboard-api
     runtime: python
-    plan: free
     buildCommand: pip install -r requirements.txt
     # Render sets $PORT itself — the app must bind to it, not a hardcoded port.
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
@@ -40,7 +39,6 @@ services:
   - type: web
     name: agent-eval-dashboard
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
